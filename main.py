@@ -50,11 +50,16 @@ def crawl_data_content(url_vnw):
     description= soup.find("div", class_="description").text
     skill = soup.findChildren('span', class_='content')[3].text
     requirement=soup.find("div", class_="requirements").text
-    # print('Job:_________________________________________________'+'\n'+ title)
-    # print('Benefits:____________________________________________'+'\n'+ benefits)
-    # print('description:_________________________________________'+'\n'+ description)
-    # print('requirement:_________________________________________'+'\n' +requirement)
-    # print('skill:_______________________________________________'+'\n'+skill)
+    title=''.join(title.split())
+    benefits = ''.join(benefits.split())
+    description = ''.join(description.split())
+    skill = ''.join(skill.split())
+    requirement = ''.join(requirement.split())
+    print('Job:_________________________________________________'+'\n'+ title)
+    print('Benefits:____________________________________________'+'\n'+ benefits)
+    print('description:_________________________________________'+'\n'+ description)
+    print('requirement:_________________________________________'+'\n' +requirement)
+    print('skill:_______________________________________________'+'\n'+skill)
     data.append({
         "Job":title,
         "Benefits":benefits,
@@ -62,9 +67,9 @@ def crawl_data_content(url_vnw):
         "Requirement":requirement,
         "Skill":skill
     })
-    df = pd.DataFrame(data=data)
-    df.to_csv("c:\\Users\\hieudv\\PycharmProjects\\Crawl_data_test\\vietnameworks.csv","w" ,header=True, index=True,encoding='utf-8')
-    print(data)
+    # df = pd.DataFrame(data=data)
+    # df.to_csv("c:\\Users\\hieudv\\PycharmProjects\\Crawl_data_test\\vietnameworks.csv","w" ,header=True, index=True,encoding='utf-8')
+    #print(data)
     return data
     #print(career)
 
@@ -98,8 +103,8 @@ def crawl_data_vnw(request_url,from_data):
 
 
 
-crawl_data_vnw(request_url[0],from_data[0])
-#crawl_data_content(url_vnw)
+#crawl_data_vnw(request_url[0],from_data[0])
+crawl_data_content(url_vnw)
 
 
 
