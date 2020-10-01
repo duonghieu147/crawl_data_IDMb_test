@@ -1,4 +1,4 @@
-#1/10/2020
+#10/1/2020
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -23,15 +23,23 @@ titles=soup.findAll('div',class_='figure')
 print(len(titles))
 links = [link.find('a',class_='job_link').attrs["href"] for link in titles]
 data = []
+count =0
 for link in links:
     print(link)
+    print(count)
+    count=count+1
     response = requests.get(link)
-    print(response)
+    #print(response)
     soup = BeautifulSoup(response.content, "html.parser")
     # print(soup)
     titles = soup.find('p', class_='title')
     if titles is None:
-        titles=soup.find('div',class_='text-job')
+        title=soup.find('div',class_='text-job')
+        titles=title.find('h1')
+        if titles is None:
+            titles=title.find('h2').text
+            if titles is None:
+                titles = title.find('h3')
         if titles is None:
             titles='Error'
     elif titles is not None:
@@ -74,7 +82,7 @@ for link in links:
     tag_skill = re.sub(key_works_replay, '+', tag_skill)
     requirement = re.sub(key_works_replay, '+', requirement)
 
-    print(len(index))
+    #print(len(index))
     print(benefits+'-----------------------------------------------------------')
     print(description+'--------------------------------------------------------')
     print(requirement+'--------------------------------------------------------')
@@ -115,7 +123,7 @@ try:
 #                 (data[i]["Job"], data[i]["Benefits"], data[i]["Description"], data[i]["Requirement"], data[i]["TagSkill"]))
 except:
     print("Error Inser")
-    
+
 # Query the database and obtain data as Python objects
 # cur.execute("SELECT * FROM VNW;")
 # cur.fetchone()
@@ -123,9 +131,6 @@ except:
 conn.commit()
 # Close communication with the database
 cur.close()
-
-
-
 
 
 
