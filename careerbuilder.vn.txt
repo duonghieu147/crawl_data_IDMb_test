@@ -1,4 +1,4 @@
-#10/1/2020
+#1/10/2020---DVHieu
 from bs4 import BeautifulSoup
 import requests
 import json
@@ -11,96 +11,97 @@ import datetime
 
 start=datetime.datetime.now()
 print(start)
-url='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-vi.html'
-# page='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-trang-'+i'-vi.html'
-base_url='https://careerbuilder.vn/'
-response=requests.get(url)
-print(response)
-soup = BeautifulSoup(response.content, "html.parser")
-#print(soup)
-titles=soup.findAll('div',class_='figure')
-#print(titles)
-print(len(titles))
-links = [link.find('a',class_='job_link').attrs["href"] for link in titles]
 data = []
 count =0
-for link in links:
-    print(link)
-    print(count)
-    count=count+1
-    response = requests.get(link)
-    #print(response)
+i=0
+url='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-vi.html'
+page='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-trang-'+str(i)+'-vi.html'
+base_url='https://careerbuilder.vn/'
+
+
+def crawl_data_careerbuilder_full(url,count):
+    response = requests.get(url)
+    print(response)
     soup = BeautifulSoup(response.content, "html.parser")
     # print(soup)
-    titles = soup.find('p', class_='title')
-    if titles is None:
-        title=soup.find('div',class_='text-job')
-        titles=title.find('h1')
+    titles = soup.findAll('div', class_='figure')
+    # print(titles)
+    print(len(titles))
+    links = [link.find('a', class_='job_link').attrs["href"] for link in titles]
+    for link in links:
+        print(link)
+        print(count)
+        count = count + 1
+        response = requests.get(link)
+        # print(response)
+        soup = BeautifulSoup(response.content, "html.parser")
+        # print(soup)
+        titles = soup.find('p', class_='title')
         if titles is None:
-            titles=title.find('h2').text
+            title = soup.find('div', class_='text-job')
+            titles = title.find('h1')
             if titles is None:
-                titles = title.find('h3')
-        if titles is None:
-            titles='Error'
-    elif titles is not None:
-        titles=titles.text
-    print(titles)
-    index = soup.find('section', class_='job-detail-content')
-    benefits = index.findChildren('div', class_='detail-row')[0].find('ul')
-    if benefits is None:
-        benefits = index.findChildren('div', class_='detail-row')[0].find('p')
+                titles = title.find('h2').text
+                if titles is None:
+                    titles = title.find('h3')
+            if titles is None:
+                titles = 'Error'
+        elif titles is not None:
+            titles = titles.text
+        print(titles)
+        index = soup.find('section', class_='job-detail-content')
+        benefits = index.findChildren('div', class_='detail-row')[0].find('ul')
         if benefits is None:
-            benefits='Error'
-    elif benefits is not None:
-        benefits=benefits.text
+            benefits = index.findChildren('div', class_='detail-row')[0].find('p')
+            if benefits is None:
+                benefits = 'Error'
+        elif benefits is not None:
+            benefits = benefits.text
 
-    description = index.findChildren('div', class_='detail-row')[1].find('ul')
-    if description is None:
-        description = index.findChildren('div', class_='detail-row')[1].find('p').text
-    elif description is not None:
-        description=description.text
-    requirement = index.findChildren('div', class_='detail-row')[2].find('ul')
-    if requirement is None:
-        requirement = index.findChildren('div', class_='detail-row')[2].find('p').text
-    elif requirement is not None:
-        requirement=requirement.text
-    tag = soup.find('div', class_='job-tags')
-    if tag is None:
-        tag_skill = 'Error'
-    elif tag is not None:
-        tag_skill = tag.find('ul').text
-    #titles = ' '.join(titles.split())
-    benefits = ' '.join(benefits.split())
-    description = ' '.join(description.split())
-    tag_skill = ' '.join(tag_skill.split())
-    requirement = ' '.join(requirement.split())
-    # Xoa Ky tu Dac biet
-    key_works_replay = '[•*·●]'
-    #titles = re.sub(key_works_replay, '+', titles)
-    benefits = re.sub(key_works_replay, '+', benefits)
-    description = re.sub(key_works_replay, '+', description)
-    tag_skill = re.sub(key_works_replay, '+', tag_skill)
-    requirement = re.sub(key_works_replay, '+', requirement)
+        description = index.findChildren('div', class_='detail-row')[1].find('ul')
+        if description is None:
+            description = index.findChildren('div', class_='detail-row')[1].find('p').text
+        elif description is not None:
+            description = description.text
+        requirement = index.findChildren('div', class_='detail-row')[2].find('ul')
+        if requirement is None:
+            requirement = index.findChildren('div', class_='detail-row')[2].find('p').text
+        elif requirement is not None:
+            requirement = requirement.text
+        tag = soup.find('div', class_='job-tags')
+        if tag is None:
+            tag_skill = 'Error'
+        elif tag is not None:
+            tag_skill = tag.find('ul').text
+        # titles = ' '.join(titles.split())
+        benefits = ' '.join(benefits.split())
+        description = ' '.join(description.split())
+        tag_skill = ' '.join(tag_skill.split())
+        requirement = ' '.join(requirement.split())
+        # Xoa Ky tu Dac biet
+        key_works_replay = '[•*·●]'
+        # titles = re.sub(key_works_replay, '+', titles)
+        benefits = re.sub(key_works_replay, '+', benefits)
+        description = re.sub(key_works_replay, '+', description)
+        tag_skill = re.sub(key_works_replay, '+', tag_skill)
+        requirement = re.sub(key_works_replay, '+', requirement)
 
-    #print(len(index))
-    print(benefits+'-----------------------------------------------------------')
-    print(description+'--------------------------------------------------------')
-    print(requirement+'--------------------------------------------------------')
-    print(tag_skill + '------------------------------------------------------------------')
-    data.append({
-        "Job": titles,
-        "Benefits": benefits,
-        "Description": description,
-        "Requirement": requirement,
-        "TagSkill": tag_skill
-    })
-
-
-
-
-
-
-
+        # print(len(index))
+        print(benefits + '-----------------------------------------------------------')
+        print(description + '--------------------------------------------------------')
+        print(requirement + '--------------------------------------------------------')
+        print(tag_skill + '------------------------------------------------------------------')
+        data.append({
+            "Job": titles,
+            "Benefits": benefits,
+            "Description": description,
+            "Requirement": requirement,
+            "TagSkill": tag_skill
+        })
+while requests.get(page).status_code ==200:
+    print(page)
+    crawl_data_careerbuilder_full(page,count)
+    i=i+1
 
 
 conn = psycopg2.connect("dbname=careerbuilder user=postgres password=123456")
