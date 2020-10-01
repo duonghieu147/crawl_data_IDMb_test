@@ -1,0 +1,134 @@
+#1/10/2020
+from bs4 import BeautifulSoup
+import requests
+import json
+import pandas as pd
+import numpy as np
+import re
+import psycopg2
+import datetime
+
+
+start=datetime.datetime.now()
+print(start)
+url='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-vi.html'
+# page='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-trang-'+i'-vi.html'
+base_url='https://careerbuilder.vn/'
+response=requests.get(url)
+print(response)
+soup = BeautifulSoup(response.content, "html.parser")
+#print(soup)
+titles=soup.findAll('div',class_='figure')
+#print(titles)
+print(len(titles))
+links = [link.find('a',class_='job_link').attrs["href"] for link in titles]
+data = []
+for link in links:
+    print(link)
+    response = requests.get(link)
+    print(response)
+    soup = BeautifulSoup(response.content, "html.parser")
+    # print(soup)
+    titles = soup.find('p', class_='title')
+    if titles is None:
+        titles=soup.find('div',class_='text-job')
+        if titles is None:
+            titles='Error'
+    elif titles is not None:
+        titles=titles.text
+    print(titles)
+    index = soup.find('section', class_='job-detail-content')
+    benefits = index.findChildren('div', class_='detail-row')[0].find('ul')
+    if benefits is None:
+        benefits = index.findChildren('div', class_='detail-row')[0].find('p')
+        if benefits is None:
+            benefits='Error'
+    elif benefits is not None:
+        benefits=benefits.text
+
+    description = index.findChildren('div', class_='detail-row')[1].find('ul')
+    if description is None:
+        description = index.findChildren('div', class_='detail-row')[1].find('p').text
+    elif description is not None:
+        description=description.text
+    requirement = index.findChildren('div', class_='detail-row')[2].find('ul')
+    if requirement is None:
+        requirement = index.findChildren('div', class_='detail-row')[2].find('p').text
+    elif requirement is not None:
+        requirement=requirement.text
+    tag = soup.find('div', class_='job-tags')
+    if tag is None:
+        tag_skill = 'Error'
+    elif tag is not None:
+        tag_skill = tag.find('ul').text
+    #titles = ' '.join(titles.split())
+    benefits = ' '.join(benefits.split())
+    description = ' '.join(description.split())
+    tag_skill = ' '.join(tag_skill.split())
+    requirement = ' '.join(requirement.split())
+    # Xoa Ky tu Dac biet
+    key_works_replay = '[•*·●]'
+    #titles = re.sub(key_works_replay, '+', titles)
+    benefits = re.sub(key_works_replay, '+', benefits)
+    description = re.sub(key_works_replay, '+', description)
+    tag_skill = re.sub(key_works_replay, '+', tag_skill)
+    requirement = re.sub(key_works_replay, '+', requirement)
+
+    print(len(index))
+    print(benefits+'-----------------------------------------------------------')
+    print(description+'--------------------------------------------------------')
+    print(requirement+'--------------------------------------------------------')
+    print(tag_skill + '------------------------------------------------------------------')
+    data.append({
+        "Job": titles,
+        "Benefits": benefits,
+        "Description": description,
+        "Requirement": requirement,
+        "TagSkill": tag_skill
+    })
+
+
+
+
+
+
+
+
+
+conn = psycopg2.connect("dbname=careerbuilder user=postgres password=123456")
+# Open a cursor to perform database operations
+cur = conn.cursor()
+# Execute a command: this creates a new table
+cur.execute(
+    "CREATE TABLE IF NOT EXISTS careerbuilder (id serial PRIMARY KEY, Job varchar, Benefits varchar,Description varchar,Requirement varchar,TagSkill varchar);")
+# Pass data to fill a query placeholders and let Psycopg perform
+# the correct conversion (no more SQL injections!)
+print(len(data))
+try:
+    for i in range(len(data)):
+        cur.execute(
+            "INSERT INTO careerbuilder (Job, Benefits,Description,Requirement,TagSkill) VALUES (%s, %s,%s, %s,%s)",
+            (data[i]["Job"], data[i]["Benefits"], data[i]["Description"], data[i]["Requirement"], data[i]["TagSkill"]))
+
+# for i in range(len(data)):
+#     cur.execute("INSERT INTO careerbuilder (Job, Benefits,Description,Requirement,TagSkill) VALUES (%s, %s,%s, %s,%s)",
+#                 (data[i]["Job"], data[i]["Benefits"], data[i]["Description"], data[i]["Requirement"], data[i]["TagSkill"]))
+except:
+    print("Error Inser")
+    
+# Query the database and obtain data as Python objects
+# cur.execute("SELECT * FROM VNW;")
+# cur.fetchone()
+# Make the changes to the database persistent
+conn.commit()
+# Close communication with the database
+cur.close()
+
+
+
+
+
+
+end=datetime.datetime.now()
+time_run=end-start
+print(time_run)
