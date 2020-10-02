@@ -1,0 +1,168 @@
+#2/10/2020
+from bs4 import BeautifulSoup
+import requests
+import json
+import pandas as pd
+import numpy as np
+import re
+import psycopg2
+import datetime
+
+#set time run
+start=datetime.datetime.now()
+print(start)
+
+data = []
+count =0
+i=0
+
+url='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-vi.html'
+page='https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-trang-'+'1'+'-vi.html'
+base_url='https://careerbuilder.vn/'
+
+#Ham Tien Xu ly String :xoa ky tu dac biet xoa khoang trang
+def handle_string( list_string):
+    if (list_string == []):
+        return list_string
+    result = []
+    check = list_string[len(list_string) - 1].lstrip()
+    check = re.sub("[-\xa0·•*★]+", "", check)
+    for s in list_string:
+        s = s.lstrip()
+        s = re.sub("[-\xa0·•*★]+", "", s)
+
+        if (check == s):
+            result.append(s)
+            break
+        s = s.lstrip()
+        result.append(s)
+    return result
+
+#
+def crawl_data_careerbuilder_full(url,count):
+    response = requests.get(url)
+    print(response)
+    soup = BeautifulSoup(response.content, "html.parser")
+    # print(soup)
+    titles = soup.findAll('div', class_='figure')
+    # print(titles)
+    print(len(titles))
+    links = [link.find('a', class_='job_link').attrs["href"] for link in titles]
+    _i = 0
+    for link in links:
+        # if(_i>49):
+        #     break
+        # _i+=1
+        print(link)
+        print(count)
+        count = count + 1
+        response = requests.get(link)
+        # print(response)
+        soup = BeautifulSoup(response.content, "html.parser")
+        # print(soup)
+        #kiem tra Cong viec can lay
+        titles = soup.find('p', class_='title')
+        if titles is None:
+            title = soup.find('div', class_='text-job')
+            titles = title.find('h1')
+            if titles is None:
+                titles = title.find('h2').text
+                if titles is None:
+                    titles = title.find('h3')
+            if titles is None:
+                titles = 'Error'
+        elif titles is not None:
+            titles = titles.text
+        print(titles)
+        index = soup.find('section', class_='job-detail-content')
+
+        benefits = index.findChildren('div', class_='detail-row')[0]
+        a = benefits.select('p,li')
+        benefits = []
+        for i in a:
+            benefits.append(i.text)
+
+        description = index.findChildren('div', class_='detail-row')[1]
+        a = description.select('p,li')
+        description = []
+        for i in a:
+            description.append(i.text)
+
+        requirement = index.findChildren('div', class_='detail-row')[2]
+        a = requirement.select('p,li')
+        requirement = []
+        for i in a:
+            requirement.append(i.text)
+
+        tag = soup.find('div', class_='job-tags')
+        if tag is None:
+            tag_skill = 'Error'
+        elif tag is not None:
+            tag_skill = tag.find('ul').text
+        tag_skill = tag_skill.lstrip().rstrip().split('\n')
+
+        #Tien xu ly tring
+        benefits=handle_string(benefits)
+        description=handle_string(description)
+        requirement=handle_string(requirement)
+        tag_skill=handle_string(tag_skill)
+        # benefits = benefits.split(',')
+        # description = description.split(',')
+        # requirement = requirement.split(',')
+        # tag_skill = tag_skill.split(',')
+        # print(benefits)
+        # print(description)
+        # print(requirement)
+        # print(tag_skill)
+
+        data.append({
+            "Job": titles,
+            "Benefits": benefits,
+            "Description": description,
+            "Requirement": requirement,
+            "TagSkill": tag_skill
+        })
+#so trang muon lay
+while i < 38:
+    try:
+        print(url)
+        i += 1
+        page = 'https://careerbuilder.vn/viec-lam/cntt-phan-cung-mang-cntt-phan-mem-c63,1-trang-' + str(i) + '-vi.html'
+        crawl_data_careerbuilder_full(page, count)
+    except:
+        print("Trang cuoi")
+
+
+#Connect database
+conn = psycopg2.connect("dbname=careerbuilder user=postgres password=123456")
+# Open a cursor to perform database operations
+cur = conn.cursor()
+
+cur.execute(
+    "DROP TABLE IF EXISTS careerbuilder"
+)
+# Execute a command: this creates a new table
+cur.execute(
+    "CREATE TABLE IF NOT EXISTS careerbuilder (id serial PRIMARY KEY, Job varchar, Benefits text[],Description text[],Requirement text[],TagSkill text[]);")
+# Pass data to fill a query placeholders and let Psycopg perform
+# the correct conversion (no more SQL injections!)
+print(len(data))
+try:
+    for i in range(len(data)):
+        cur.execute(
+            "INSERT INTO careerbuilder (Job, Benefits,Description,Requirement,TagSkill) VALUES (%s, %s,%s, %s,%s)",
+            (data[i]["Job"], data[i]["Benefits"], data[i]["Description"], data[i]["Requirement"], data[i]["TagSkill"]))
+except:
+    print("Error Inser")
+# Query the database and obtain data as Python objects
+# cur.execute("SELECT * FROM VNW;")
+# cur.fetchone()
+# Make the changes to the database persistent
+conn.commit()
+# Close communication with the database
+cur.close()
+
+#Time Run
+end=datetime.datetime.now()
+time_run=end-start
+print(time_run)
